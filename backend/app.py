@@ -1,113 +1,74 @@
 from flask import Flask, request, jsonify, send_from_directory
-from db import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from db import get_db
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
+app = Flask(__name__, static_folder="../frontend", static_url_path="")
 
-app = Flask(__name__, static_folder=FRONTEND_DIR)
-
-# --------------------------
-# Serve Frontend Pages
-# --------------------------
+# Serve frontend
 @app.route("/")
 def index():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    return send_from_directory("../frontend", "index.html")
 
-@app.route("/dashboard")
-def dashboard():
-    return send_from_directory(FRONTEND_DIR, "dashboard.html")
+@app.route("/<path:path>")
+def static_files(path):
+    return send_from_directory("../frontend", path)
 
-@app.route("/auth.js")
-def js():
-    return send_from_directory(FRONTEND_DIR, "auth.js")
-
-@app.route("/style.css")
-def css():
-    return send_from_directory(FRONTEND_DIR, "style.css")
-
-# --------------------------
 # Register API
-# --------------------------
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.json
-    username = data.get("username", "").strip()
-    password = data.get("password", "").strip()
+    username = data.get("username")
+    password = data.get("password")
 
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Create table if not exists
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             password_hash TEXT
         )
     """)
-    # Check if username exists
-    cur.execute("SELECT * FROM users WHERE username=?", (username,))
-    if cur.fetchone():
+
+    try:
+        cur.execute(
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            (username, generate_password_hash(password))
+        )
+        conn.commit()
+    except Exception as e:
         conn.close()
-        return jsonify({"error": "Username already exists"}), 400
+        return jsonify({"error": "User already exists"}), 400
 
-    # Hash password
-    hash_pwd = generate_password_hash(password)
-    cur.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, hash_pwd))
-    conn.commit()
     conn.close()
-    return jsonify({"message": "User registered successfully"})
+    return jsonify({"message": "User registered successfully"}), 201
 
-# --------------------------
+
 # Login API
-# --------------------------
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.json
-    username = data.get("username", "").strip()
-    password = data.get("password", "").strip()
-
-    if not username or not password:
-        return jsonify({"error": "Username and password required"}), 400
+    username = data.get("username")
+    password = data.get("password")
 
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id, password_hash FROM users WHERE username=?", (username,))
+
+    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cur.fetchone()
-    if not user or not check_password_hash(user[1], password):
-        conn.close()
+    conn.close()
+
+    if not user or not check_password_hash(user["password_hash"], password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    # Store login history
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS logins (
-            id INTEGER PRIMARY KEY,
-            username TEXT,
-            login_time TEXT
-        )
-    """)
-    cur.execute("INSERT INTO logins (username, login_time) VALUES (?, ?)", (username, datetime.now().isoformat()))
-    conn.commit()
-    conn.close()
+    return jsonify({"message": "Login successful"}), 200
 
-    return jsonify({"message": f"{username} logged in successfully!"})
 
-# --------------------------
-# Login History API
-# --------------------------
-@app.route("/api/logins")
-def logins():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT username, login_time FROM logins ORDER BY id DESC")
-    rows = cur.fetchall()
-    conn.close()
-    return jsonify([{"username": r[0], "time": r[1]} for r in rows])
-
-# --------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
