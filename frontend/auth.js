@@ -1,40 +1,51 @@
-function register() {
-    const username = document.getElementById("regUser").value.trim();
-    const password = document.getElementById("regPwd").value.trim();
-    if (!username || !password) {
-        alert("Enter username and password");
-        return;
-    }
+// Toggle between forms
+document.getElementById("show-login").addEventListener("click", () => {
+  document.getElementById("register-form").style.display = "none";
+  document.getElementById("login-form").style.display = "block";
+});
 
-    fetch("/api/register", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({username, password})
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("regMsg").innerText = data.message || data.error;
-    });
-}
+document.getElementById("show-register").addEventListener("click", () => {
+  document.getElementById("login-form").style.display = "none";
+  document.getElementById("register-form").style.display = "block";
+});
 
-function login() {
-    const username = document.getElementById("loginUser").value.trim();
-    const password = document.getElementById("loginPwd").value.trim();
-    if (!username || !password) {
-        alert("Enter username and password");
-        return;
-    }
+// Register user
+document.getElementById("register-btn").addEventListener("click", async () => {
+  const username = document.getElementById("reg-username").value;
+  const password = document.getElementById("reg-password").value;
 
-    fetch("/api/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({username, password})
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("loginMsg").innerText = data.message || data.error;
-        if (data.message) {
-            window.location.href = "/dashboard";
-        }
-    });
-}
+  const res = await fetch("/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await res.json();
+  document.getElementById("register-msg").innerText = data.message;
+
+  if (res.ok) {
+    setTimeout(() => {
+      document.getElementById("register-form").style.display = "none";
+      document.getElementById("login-form").style.display = "block";
+    }, 1000);
+  }
+});
+
+// Login user
+document.getElementById("login-btn").addEventListener("click", async () => {
+  const username = document.getElementById("login-username").value;
+  const password = document.getElementById("login-password").value;
+
+  const res = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await res.json();
+  document.getElementById("login-msg").innerText = data.message;
+
+  if (res.ok) {
+    window.location.href = "/dashboard";
+  }
+});
