@@ -1,0 +1,25 @@
+body {
+    font-family: Arial;
+    padding: 40px;
+    background-color: #f4f6f8;
+}
+
+input {
+    padding: 8px;
+    margin-right: 8px;
+    margin-bottom: 10px;
+}
+
+button {
+    padding: 8px 16px;
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: #0078d4;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 0;
+}

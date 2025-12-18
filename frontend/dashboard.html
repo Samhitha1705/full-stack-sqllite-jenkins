@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h2>Login History</h2>
+    <ul id="history"></ul>
+
+    <script src="/auth.js"></script>
+    <script>
+        function loadHistory() {
+            fetch("/api/logins")
+            .then(res => res.json())
+            .then(data => {
+                const ul = document.getElementById("history");
+                ul.innerHTML = "";
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = `${item.username} → ${item.time}`;
+                    ul.appendChild(li);
+                });
+            });
+        }
+
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>
