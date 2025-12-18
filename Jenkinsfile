@@ -4,54 +4,64 @@ pipeline {
     environment {
         IMAGE_NAME = "fullstack-sqlite"
         CONTAINER_NAME = "test-sqlite"
-        DATA_PATH = "C:\\Users\\1016\\Downloads\\fullstack sql lite jenkins\\data"
+        DATA_DIR = "${WORKSPACE}/data"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git',
-                        credentialsId: 'github-fine-grained-pat'
-                    ]]
-                ])
+                echo "Checking out repository..."
+                checkout scm
+            }
+        }
+
+        stage('Prepare Data Directory') {
+            steps {
+                echo "Creating data directory if it does not exist..."
+                bat "if not exist \"${DATA_DIR}\" mkdir \"${DATA_DIR}\""
             }
         }
 
         stage('Clean Old Container & Image') {
             steps {
+                echo "Removing old container and image if exist..."
                 bat """
-                docker rm -f %CONTAINER_NAME% 2>nul
-                docker rmi %IMAGE_NAME% 2>nul
+                    docker rm -f ${CONTAINER_NAME} 2>nul || echo "No old container"
+                    docker rmi ${IMAGE_NAME} 2>nul || echo "No old image"
                 """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %IMAGE_NAME% ."
+                echo "Building Docker image..."
+                bat "docker build -t ${IMAGE_NAME} ."
             }
         }
 
         stage('Run Container') {
             steps {
+                echo "Running container..."
                 bat """
-                docker run -d --name %CONTAINER_NAME% -p 5000:5000 -v "%DATA_PATH%:/app/backend/data" %IMAGE_NAME%
+                    docker run -d --name ${CONTAINER_NAME} -p 5000:5000 -v \"${DATA_DIR}:/app/data\" ${IMAGE_NAME}
                 """
+            }
+        }
+
+        stage('Verify Container') {
+            steps {
+                echo "Checking running containers..."
+                bat "docker ps"
             }
         }
     }
 
     post {
         success {
-            echo "Pipeline completed successfully. Check 'data' folder for app.db"
+            echo "Pipeline SUCCESS! App should be running at http://localhost:5000"
         }
         failure {
-            echo "Pipeline FAILED. Check Jenkins logs for errors."
+            echo "Pipeline FAILED! Check logs for errors."
         }
     }
 }

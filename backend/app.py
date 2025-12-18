@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
@@ -27,6 +27,11 @@ def index():
 @app.route("/<path:path>")
 def static_files(path):
     return send_from_directory("../frontend", path)
+
+# Dashboard route
+@app.route("/dashboard")
+def dashboard():
+    return send_from_directory("../frontend", "dashboard.html")  # create dashboard.html in frontend folder
 
 # Register API
 @app.route("/api/register", methods=["POST"])
@@ -80,7 +85,8 @@ def login():
     if not user or not check_password_hash(user["password_hash"], password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    return jsonify({"message": "Login successful"}), 200
+    # Redirect to dashboard after login
+    return redirect(url_for('dashboard'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
