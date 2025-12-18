@@ -1,9 +1,23 @@
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-from db import get_db
+import sqlite3
 import os
 
+# Set up Flask app
 app = Flask(__name__, static_folder="../frontend", static_url_path="")
+
+# Ensure data folder exists
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)  # create if not exists
+
+DB_PATH = os.path.join(DATA_DIR, "app.db")  # database path inside data folder
+
+# Function to get DB connection
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 # Serve frontend
 @app.route("/")
@@ -42,13 +56,12 @@ def register():
             (username, generate_password_hash(password))
         )
         conn.commit()
-    except Exception as e:
+    except sqlite3.IntegrityError:
         conn.close()
         return jsonify({"error": "User already exists"}), 400
 
     conn.close()
     return jsonify({"message": "User registered successfully"}), 201
-
 
 # Login API
 @app.route("/api/login", methods=["POST"])
@@ -68,7 +81,6 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     return jsonify({"message": "Login successful"}), 200
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
