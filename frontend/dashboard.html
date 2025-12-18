@@ -6,7 +6,7 @@
 <title>Dashboard</title>
 <style>
 body { font-family:'Segoe UI', Tahoma; margin:0; background:#f4f4f9; }
-header { background:#6a85b6; color:white; padding:20px; text-align:center; font-size:1.5em; }
+header { background:#6a85b6; color:white; padding:20px; text-align:center; font-size:1.5em; position:relative; }
 .logout-btn { position:absolute; right:20px; top:20px; background:#bac8e0; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; transition:0.3s; }
 .logout-btn:hover { background:#6a85b6; color:white; }
 table { width:100%; border-collapse: collapse; margin-top:20px; }
@@ -23,7 +23,7 @@ h1 { margin-left:20px; margin-top:20px; }
 <h1>Users List</h1>
 <table id="users-table">
     <thead>
-        <tr><th>ID</th><th>Username</th></tr>
+        <tr><th>ID</th><th>Username</th><th>Last Login ⏰</th></tr>
     </thead>
     <tbody></tbody>
 </table>
@@ -37,7 +37,7 @@ async function fetchUsers(){
         tbody.innerHTML = '';
         data.users.forEach(u=>{
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${u.id}</td><td>${u.username} 👤</td>`;
+            tr.innerHTML = `<td>${u.id}</td><td>${u.username} 👤</td><td>${u.last_login}</td>`;
             tbody.appendChild(tr);
         });
     } else {
