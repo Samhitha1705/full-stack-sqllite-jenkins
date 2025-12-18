@@ -3,110 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Users</title>
+<title>Dashboard</title>
 <style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f4f4f9;
-        margin: 0;
-        padding: 20px;
-        color: #333;
-    }
-
-    h1 {
-        text-align: center;
-        color: #444;
-        margin-bottom: 30px;
-    }
-
-    table {
-        width: 80%;
-        margin: 0 auto;
-        border-collapse: collapse;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        border-radius: 8px;
-        overflow: hidden;
-        animation: fadeIn 0.8s ease-in-out;
-    }
-
-    th, td {
-        padding: 12px 15px;
-        text-align: left;
-    }
-
-    th {
-        background: linear-gradient(90deg, #6a85b6, #bac8e0);
-        color: white;
-        font-weight: 600;
-    }
-
-    tr:nth-child(even) {
-        background-color: #f9f9f9;
-    }
-
-    tr:hover {
-        background-color: #e2e8f0;
-        transition: background-color 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        0% { opacity: 0; transform: translateY(-20px);}
-        100% { opacity: 1; transform: translateY(0);}
-    }
-
-    .container {
-        max-width: 900px;
-        margin: auto;
-    }
-
-    .emoji {
-        font-size: 1.2em;
-        margin-right: 5px;
-    }
+body { font-family:'Segoe UI', Tahoma; margin:0; background:#f4f4f9; }
+header { background:#6a85b6; color:white; padding:20px; text-align:center; font-size:1.5em; }
+.logout-btn { position:absolute; right:20px; top:20px; background:#bac8e0; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; transition:0.3s; }
+.logout-btn:hover { background:#6a85b6; color:white; }
+table { width:100%; border-collapse: collapse; margin-top:20px; }
+th, td { padding:12px; text-align:left; border-bottom:1px solid #ccc; }
+tr:hover { background: #e0e0e0; transform: scale(1.02); transition: 0.2s; }
+h1 { margin-left:20px; margin-top:20px; }
 </style>
 </head>
 <body>
-    <div class="container">
-        <h1>👨‍💻 Dashboard - Users</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Password (hashed)</th>
-                </tr>
-            </thead>
-            <tbody id="userTable">
-                <!-- Users will be populated here -->
-            </tbody>
-        </table>
-    </div>
+<header>
+    Dashboard 🌟
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
+<h1>Users List</h1>
+<table id="users-table">
+    <thead>
+        <tr><th>ID</th><th>Username</th></tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
 <script>
-    async function loadUsers() {
-        try {
-            const res = await fetch('/api/users'); // We will add /api/users in app.py
-            const data = await res.json();
-
-            const tbody = document.getElementById('userTable');
-            tbody.innerHTML = '';
-
-            data.users.forEach(user => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>🆔 ${user.id}</td>
-                    <td>👤 ${user.username}</td>
-                    <td>🔑 ${user.password}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } catch (err) {
-            console.error(err);
-        }
+async function fetchUsers(){
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    if(res.status===200){
+        const tbody = document.querySelector('#users-table tbody');
+        tbody.innerHTML = '';
+        data.users.forEach(u=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${u.id}</td><td>${u.username} 👤</td>`;
+            tbody.appendChild(tr);
+        });
+    } else {
+        alert("Failed to fetch users.");
     }
-
-    loadUsers();
+}
+async function logout(){
+    await fetch('/api/logout', {method:'POST'});
+    window.location.href = '/';
+}
+window.onload = fetchUsers;
 </script>
 </body>
 </html>
