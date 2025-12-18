@@ -12,8 +12,8 @@ pipeline {
         stage('Clean Old Container & Image') {
             steps {
                 bat '''
-                docker rm -f test-sqlite 2>nul
-                docker rmi fullstack-sqlite 2>nul
+                docker rm -f test-sqlite || exit /b 0
+                docker rmi fullstack-sqlite || exit /b 0
                 '''
             }
         }
