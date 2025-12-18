@@ -1,19 +1,10 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_IMAGE = 'fullstack-sqlite'
-        CONTAINER_NAME = 'test-sqlite'
-        PORT = '5000'
-        FLASK_APP = 'backend/app.py'
-        FLASK_DEBUG = '1'
-    }
-
     stages {
 
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
-                echo "Checking out repository..."
                 checkout scm
             }
         }
@@ -21,33 +12,36 @@ pipeline {
         stage('Clean Old Container & Image') {
             steps {
                 bat '''
-                docker rm -f %CONTAINER_NAME% 2>nul
-                docker rmi %DOCKER_IMAGE% 2>nul
+                docker rm -f test-sqlite 2>nul
+                docker rmi fullstack-sqlite 2>nul
+                '''
+            }
+        }
+
+        stage('Prepare Data Directory') {
+            steps {
+                bat '''
+                if not exist data mkdir data
                 '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                bat 'docker build -t %DOCKER_IMAGE% .'
+                bat '''
+                docker build -t fullstack-sqlite .
+                '''
             }
         }
 
         stage('Run Container') {
             steps {
-                echo "Running Docker container..."
-
                 bat '''
-                if not exist "%WORKSPACE%\\data" mkdir "%WORKSPACE%\\data"
-
                 docker run -d ^
-                  -p %PORT%:%PORT% ^
-                  -e FLASK_APP=%FLASK_APP% ^
-                  -e FLASK_DEBUG=%FLASK_DEBUG% ^
-                  -v "%WORKSPACE%\\data:/app/data" ^
-                  --name %CONTAINER_NAME% ^
-                  %DOCKER_IMAGE%
+                  --name test-sqlite ^
+                  -p 5000:5000 ^
+                  -v %cd%\\data:/app/data ^
+                  fullstack-sqlite
                 '''
             }
         }
@@ -55,10 +49,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Pipeline completed successfully"
+            echo '✅ Pipeline SUCCESS'
         }
         failure {
-            echo "❌ Pipeline failed – check logs"
+            echo '❌ Pipeline FAILED'
         }
     }
 }
