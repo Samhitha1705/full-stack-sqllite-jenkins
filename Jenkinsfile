@@ -2,48 +2,54 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'fullstack-sqlite'
+        DOCKER_IMAGE = 'fullstack-sqlite'
         CONTAINER_NAME = 'test-sqlite'
-        DATA_DIR = "${env.WORKSPACE}\\data"
+        WORKSPACE_DATA = "${env.WORKSPACE}\\data"
+        FLASK_APP = 'backend/app.py'
+        FLASK_ENV = 'development'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                echo "Checking out repo..."
-                git(
-                    url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git',
-                    branch: 'main',
-                    credentialsId: 'github-fine-grained-pat'
-                )
+                echo 'Checking out repo...'
+                git url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git', 
+                    credentialsId: 'github-fine-grained-pat', branch: 'main'
             }
         }
 
-        stage('Clean Old Image') {
+        stage('Clean Old Container and Image') {
             steps {
-                echo "Removing old image if exists..."
-                bat "docker rmi %IMAGE_NAME% || echo Image not found"
+                echo 'Removing old container and image if exists...'
+                bat """
+                docker rm -f %CONTAINER_NAME% || echo Container not found
+                docker rmi %DOCKER_IMAGE% || echo Image not found
+                """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                bat "docker build -t %IMAGE_NAME% ."
+                echo 'Building Docker image...'
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
         stage('Run Container') {
             steps {
-                echo "Starting container..."
+                echo 'Starting Docker container...'
                 bat """
-                if not exist "%DATA_DIR%" mkdir "%DATA_DIR%"
-                docker ps -a | findstr %CONTAINER_NAME% >nul
-                if %errorlevel%==0 (
-                    echo Container already exists, restarting...
+                if not exist "%WORKSPACE_DATA%" mkdir "%WORKSPACE_DATA%"
+                docker ps -a | findstr %CONTAINER_NAME% 1>nul
+                if %ERRORLEVEL% == 0 (
+                    echo Container exists, restarting...
                     docker start %CONTAINER_NAME%
                 ) else (
-                    docker run -d -p 5000:5000 -v "%DATA_DIR%:/app/data" --name %CONTAINER_NAME% %IMAGE_NAME%
+                    docker run -d -p 5000:5000 `
+                        -e FLASK_APP=%FLASK_APP% `
+                        -e FLASK_ENV=%FLASK_ENV% `
+                        -v "%WORKSPACE_DATA%:/app/data" `
+                        --name %CONTAINER_NAME% %DOCKER_IMAGE%
                 )
                 """
             }
@@ -51,23 +57,19 @@ pipeline {
 
         stage('Test APIs') {
             steps {
-                echo "Running API tests..."
-                bat "curl http://localhost:5000/"
-                // Add more curl or Python requests for additional endpoints
+                echo 'Running API tests...'
+                bat """
+                timeout /t 5
+                curl -v http://localhost:5000/
+                """
             }
         }
 
         stage('Verify SQLite DB') {
             steps {
-                echo "Checking SQLite database..."
+                echo 'Checking SQLite DB...'
                 bat """
-                if exist "%DATA_DIR%\\app.db" (
-                    echo app.db exists
-                    sqlite3 "%DATA_DIR%\\app.db" "SELECT name FROM sqlite_master WHERE type='table';"
-                ) else (
-                    echo ERROR: app.db not found!
-                    exit /b 1
-                )
+                sqlite3 "%WORKSPACE_DATA%\\app.db" ".tables"
                 """
             }
         }
@@ -75,9 +77,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished. Container is still running for persistence."
-            // Container removal skipped to persist DB
-            // bat "docker rm -f %CONTAINER_NAME% || echo Container not found"
+            echo 'Pipeline finished. Container is still running for persistence.'
         }
     }
 }
