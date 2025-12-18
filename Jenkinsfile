@@ -4,22 +4,20 @@ pipeline {
     environment {
         IMAGE_NAME = "fullstack-sqlite"
         CONTAINER_NAME = "test-sqlite"
-        DATA_DIR = "data"
-        HOST_PATH = "${WORKSPACE}/data"
-        CONTAINER_PATH = "/app/data"
-        PORT = "5000"
+        DATA_PATH = "C:\\Users\\1016\\Downloads\\fullstack sql lite jenkins\\data"
     }
 
     stages {
-
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
                 checkout([$class: 'GitSCM',
-                          branches: [[name: '*/main']],
-                          userRemoteConfigs: [[
-                              url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git',
-                              credentialsId: 'github-fine-grained-pat'
-                          ]]
+                    branches: [[name: '*/main']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git',
+                        credentialsId: 'github-fine-grained-pat'
+                    ]]
                 ])
             }
         }
@@ -33,15 +31,6 @@ pipeline {
             }
         }
 
-        stage('Prepare Data Directory') {
-            steps {
-                bat """
-                if not exist %DATA_DIR% mkdir %DATA_DIR%
-                icacls %DATA_DIR% /grant Everyone:(OI)(CI)F /T
-                """
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 bat "docker build -t %IMAGE_NAME% ."
@@ -51,25 +40,18 @@ pipeline {
         stage('Run Container') {
             steps {
                 bat """
-                docker run -d -p %PORT%:5000 --name %CONTAINER_NAME% -v %HOST_PATH%:%CONTAINER_PATH% %IMAGE_NAME%
+                docker run -d --name %CONTAINER_NAME% -p 5000:5000 -v "%DATA_PATH%:/app/backend/data" %IMAGE_NAME%
                 """
-            }
-        }
-
-        stage('Verify') {
-            steps {
-                bat "docker ps"
-                bat "dir %DATA_DIR%"
             }
         }
     }
 
     post {
         success {
-            echo "✅ Pipeline completed successfully. Access your app at http://localhost:5000"
+            echo "Pipeline completed successfully. Check 'data' folder for app.db"
         }
         failure {
-            echo "❌ Pipeline FAILED. Check logs above."
+            echo "Pipeline FAILED. Check Jenkins logs for errors."
         }
     }
 }
