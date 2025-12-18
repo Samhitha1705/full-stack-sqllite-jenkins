@@ -5,7 +5,7 @@ import os
 
 # Set up Flask app
 app = Flask(__name__, static_folder="../frontend", static_url_path="")
-app.secret_key = "supersecretkey"  # needed for session management
+app.secret_key = "supersecretkey"
 
 # Ensure data folder exists
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -14,7 +14,6 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 DB_PATH = os.path.join(DATA_DIR, "app.db")
 
-# Function to get DB connection
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -39,44 +38,59 @@ def login_page(message=""):
         <title>Login</title>
         <style>
             body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #ffe3e3;
+                font-family: 'Comic Sans MS', cursive, sans-serif;
+                background: linear-gradient(120deg, #f6d365, #fda085);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 height: 100vh;
+                animation: fadeIn 1s ease-in;
+            }}
+            @keyframes fadeIn {{
+                from {{opacity: 0;}}
+                to {{opacity: 1;}}
             }}
             h1 {{
-                color: #ff6f91;
+                color: #fff;
+                text-shadow: 2px 2px 5px #ff6f91;
             }}
             form {{
-                background-color: #fff;
+                background-color: rgba(255,255,255,0.9);
                 padding: 30px;
-                border-radius: 15px;
-                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                border-radius: 20px;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.3);
                 display: flex;
                 flex-direction: column;
-                width: 300px;
+                width: 320px;
+                animation: slideUp 0.5s ease-out;
+            }}
+            @keyframes slideUp {{
+                from {{transform: translateY(50px); opacity:0;}}
+                to {{transform: translateY(0); opacity:1;}}
             }}
             input {{
-                padding: 10px;
+                padding: 12px;
                 margin: 10px 0;
-                border-radius: 10px;
+                border-radius: 12px;
                 border: 1px solid #ddd;
+                font-size: 16px;
             }}
             button {{
                 background-color: #ff6f91;
                 color: white;
-                padding: 10px;
+                padding: 12px;
                 border: none;
-                border-radius: 10px;
+                border-radius: 12px;
                 cursor: pointer;
                 font-size: 16px;
-                transition: background-color 0.3s;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             }}
             button:hover {{
                 background-color: #ff4f70;
+                transform: scale(1.05) rotate(-2deg);
+                box-shadow: 0 6px 15px rgba(0,0,0,0.3);
             }}
             .message {{
                 color: green;
@@ -86,12 +100,12 @@ def login_page(message=""):
         </style>
     </head>
     <body>
-        <h1>Login</h1>
+        <h1>✨ Login ✨</h1>
         <form method="POST" action="/api/login">
             <div class="message">{message}</div>
             <input type="text" name="username" placeholder="Username" required />
             <input type="password" name="password" placeholder="Password" required />
-            <button type="submit">Login</button>
+            <button type="submit">Login 🔑</button>
         </form>
     </body>
     </html>
@@ -125,7 +139,6 @@ def login():
     user = cur.fetchone()
 
     if not user:
-        # Auto-register
         cur.execute(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
             (username, generate_password_hash(password))
@@ -159,58 +172,74 @@ def dashboard():
     html = """
     <html>
     <head>
-        <title>Dashboard - Users</title>
+        <title>🎉 Dashboard - Users 🎉</title>
         <style>
             body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f9f7f6;
+                font-family: 'Comic Sans MS', cursive, sans-serif;
+                background: linear-gradient(120deg, #a1c4fd, #c2e9fb);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                padding: 30px;
+                padding: 40px;
+                animation: fadeIn 1s ease-in;
+            }}
+            @keyframes fadeIn {{
+                from {{opacity: 0;}}
+                to {{opacity: 1;}}
             }}
             h1 {{
                 color: #ff6f91;
+                text-shadow: 2px 2px 5px #fff;
+                animation: bounce 1s infinite;
+            }}
+            @keyframes bounce {{
+                0%, 100% {{ transform: translateY(0); }}
+                50% {{ transform: translateY(-10px); }}
             }}
             .user-card {{
-                background-color: #ffffff;
-                border-radius: 12px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+                border-radius: 20px;
                 padding: 20px;
-                margin: 10px;
-                width: 250px;
+                margin: 15px;
+                width: 220px;
                 text-align: center;
-                transition: transform 0.2s, box-shadow 0.2s;
+                font-size: 18px;
+                color: #fff;
+                font-weight: bold;
+                box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+                transition: transform 0.3s, box-shadow 0.3s;
             }}
             .user-card:hover {{
-                transform: translateY(-5px);
-                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                transform: translateY(-5px) scale(1.05);
+                box-shadow: 0 12px 20px rgba(0,0,0,0.3);
             }}
             .logout-btn {{
-                background-color: #ff6f91;
+                background: #ff6f91;
                 color: white;
-                padding: 10px 20px;
+                padding: 12px 25px;
                 border: none;
-                border-radius: 10px;
+                border-radius: 15px;
                 cursor: pointer;
+                font-size: 18px;
                 margin-top: 20px;
-                font-size: 16px;
+                transition: all 0.3s ease;
             }}
             .logout-btn:hover {{
-                background-color: #ff4f70;
+                background: #ff4f70;
+                transform: scale(1.1) rotate(-3deg);
             }}
         </style>
     </head>
     <body>
-        <h1>Dashboard - Users</h1>
+        <h1>🎈 Dashboard 🎈</h1>
     """
 
     for u in users_list:
-        html += f'<div class="user-card">ID: {u["id"]}<br>Username: {u["username"]}</div>'
+        html += f'<div class="user-card">👤 {u["username"]} <br> 🆔 {u["id"]}</div>'
 
     html += """
         <form method="POST" action="/logout">
-            <button class="logout-btn">Logout</button>
+            <button class="logout-btn">Logout 🚪</button>
         </form>
     </body>
     </html>
