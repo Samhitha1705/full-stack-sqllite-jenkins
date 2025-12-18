@@ -2,54 +2,52 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'fullstack-sqlite'
+        DOCKER_IMAGE = 'fullstack-sqlite'
         CONTAINER_NAME = 'test-sqlite'
-        WORKSPACE_PATH = "${env.WORKSPACE}"
-        DATA_PATH = "${WORKSPACE_PATH}\\data"
+        DATA_VOLUME = "${WORKSPACE}/data:/app/data"
+        FLASK_APP = 'backend/app.py'
+        FLASK_ENV = 'development'
+        PORT = '5000'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                echo 'Checking out repo...'
-                git branch: 'main',
-                    url: 'https://github.com/Samhitha1705/full-stack-sqllite-jenkins.git',
-                    credentialsId: 'github-fine-grained-pat'
+                echo "Checking out repo..."
+                checkout scm
             }
         }
 
         stage('Clean Old Container and Image') {
             steps {
-                echo 'Removing old container and image if exists...'
+                echo "Removing old container and image if exists..."
                 bat """
-                docker rm -f %CONTAINER_NAME% || echo Container not found
-                docker rmi %IMAGE_NAME% || echo Image not found
+                    docker rm -f %CONTAINER_NAME% || echo Container not found
+                    docker rmi %DOCKER_IMAGE% || echo Image not found
                 """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
-                bat """
-                docker build -t %IMAGE_NAME% .
-                """
+                echo "Building Docker image..."
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
         stage('Run Container') {
             steps {
-                echo 'Starting Docker container...'
+                echo "Starting Docker container..."
                 bat """
-                if not exist "%DATA_PATH%" mkdir "%DATA_PATH%"
-
-                docker ps -a | findstr %CONTAINER_NAME% 1>nul
-                if %ERRORLEVEL% == 0 (
-                    echo Container exists, restarting...
-                    docker start %CONTAINER_NAME%
-                ) else (
-                    docker run -d -p 5000:5000 -e FLASK_APP=backend/app.py -e FLASK_ENV=development -v "%DATA_PATH%:/app/data" --name %CONTAINER_NAME% %IMAGE_NAME%
-                )
+                    if not exist "%WORKSPACE%\\data" mkdir "%WORKSPACE%\\data"
+                    
+                    docker ps -a | findstr %CONTAINER_NAME% > nul
+                    if %ERRORLEVEL% == 0 (
+                        echo Container exists, restarting...
+                        docker start %CONTAINER_NAME%
+                    ) else (
+                        docker run -d -p %PORT%:%PORT% -e FLASK_APP=%FLASK_APP% -e FLASK_ENV=%FLASK_ENV% -v "%DATA_VOLUME%" --name %CONTAINER_NAME% %DOCKER_IMAGE%
+                    )
                 """
             }
         }
@@ -60,7 +58,7 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Check logs for details.'
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
