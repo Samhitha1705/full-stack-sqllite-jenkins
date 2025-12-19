@@ -18,6 +18,38 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Initialize old users
+def initialize_users():
+    users_to_add = [
+        {"username": "Shinchan", "last_login": "2025-12-19 05:29:36"},
+        {"username": "doraemon", "last_login": "2025-12-19 05:37:19"},
+        {"username": "buddu", "last_login": "2025-12-19 05:30:00"}
+    ]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Ensure table exists
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            last_login TEXT
+        )
+    """)
+
+    # Insert users if they don't exist
+    for u in users_to_add:
+        cur.execute("""
+            INSERT OR IGNORE INTO users (username, last_login)
+            VALUES (?, ?)
+        """, (u["username"], u["last_login"]))
+
+    conn.commit()
+    conn.close()
+    print("✅ All old users initialized in app.db")
+
 # Utility to update last_login for a specific user
 def update_last_login(username):
     conn = get_db()
@@ -27,16 +59,6 @@ def update_last_login(username):
     conn.commit()
     conn.close()
     print(f"{username} last_login updated to {now}")
-
-# Optional: Bulk update existing users (one-off)
-def bulk_update_users(users_dict):
-    conn = get_db()
-    cur = conn.cursor()
-    for username, last_login in users_dict.items():
-        cur.execute("UPDATE users SET last_login = ? WHERE username = ?", (last_login, username))
-    conn.commit()
-    conn.close()
-    print("Bulk last_login update complete.")
 
 # Routes
 @app.route("/")
@@ -119,5 +141,7 @@ def get_users():
     users_list = [{"id": u["id"], "username": u["username"], "last_login": u["last_login"]} for u in users]
     return jsonify({"users": users_list})
 
+# Run app
 if __name__ == "__main__":
+    initialize_users()  # <-- insert old users automatically
     app.run(host="0.0.0.0", port=5000, debug=True)
