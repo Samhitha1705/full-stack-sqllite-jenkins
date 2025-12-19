@@ -10,27 +10,21 @@ def ensure_last_login_column(cur):
         print("Added 'last_login' column to users table.")
 
 def update_all_users_last_login():
-    """Update last_login for all users to current datetime."""
+    """Update last_login for all users that are missing it."""
     conn = get_db()
     cur = conn.cursor()
 
     # Ensure the last_login column exists
     ensure_last_login_column(cur)
 
-    # Get all usernames
-    cur.execute("SELECT username FROM users")
-    users = cur.fetchall()
-
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    for user in users:
-        username = user["username"]
-        cur.execute("UPDATE users SET last_login = ? WHERE username = ?", (now, username))
-        print(f"{username} last_login updated to {now}")
+    # Update users where last_login is NULL
+    cur.execute("UPDATE users SET last_login = ? WHERE last_login IS NULL", (now,))
 
     conn.commit()
     conn.close()
-    print("All users' last_login updated successfully!")
+    print("✅ All users now have last_login set (if missing)")
 
 if __name__ == "__main__":
     update_all_users_last_login()
