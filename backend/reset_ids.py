@@ -4,7 +4,7 @@ import sqlite3
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 
-# Create a new table
+# Create a new tableeee
 cur.execute("""
 CREATE TABLE new_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
